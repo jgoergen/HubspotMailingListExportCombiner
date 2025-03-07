@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Drawing;
 using Console = Colorful.Console;
+using CsvHelper.Configuration;
 
 namespace HubspotMailingListExportCombiner
 {
@@ -128,8 +129,15 @@ namespace HubspotMailingListExportCombiner
 
         static List<HubspotMailingListExportEntry> GetCSVData(string path)
         {
+            var config = new CsvConfiguration(CultureInfo.InvariantCulture)
+            {
+                //MissingFieldFound = null, // ignore missing headers
+                //HeaderValidated = null, // ignore missing headers
+                CultureInfo = CultureInfo.InvariantCulture,
+            };
+
             using (var reader = new StreamReader(path))
-            using (var csv = new CsvReader(reader, CultureInfo.InvariantCulture))
+            using (var csv = new CsvReader(reader, config))
             {
                 return csv.GetRecords<HubspotMailingListExportEntry>().ToList();
             }
