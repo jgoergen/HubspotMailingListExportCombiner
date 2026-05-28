@@ -13,20 +13,21 @@ namespace HubspotMailingListExportCombiner
 {
     class Program
     {
-        private static bool DEBUG = false;
-        private static List<string> KEEP_EVENT_TYPES = new List<string>() { EventType.DELIVERED.Value, EventType.OPEN.Value, EventType.CLICK.Value, EventType.BOUNCE.Value, EventType.UNSUBSCRIBE.Value };
-        private static List<List<HubspotMailingListExportEntry>> lists;
-        private static List<CombinedDataEntry> combinedList;
+        private static readonly bool DEBUG = false;
+        private static readonly List<string> KEEP_EVENT_TYPES = new List<string>() { EventType.DELIVERED.Value, EventType.OPEN.Value, EventType.CLICK.Value, EventType.BOUNCE.Value, EventType.UNSUBSCRIBE.Value };
+        private static List<List<HubspotMailingListExportEntry>> lists = new List<List<HubspotMailingListExportEntry>>();
+        private static List<CombinedDataEntry> combinedList = new List<CombinedDataEntry>();
 
         static void Main(string[] args)
         {
             var files = new List<string>();
+            var outputFileName = $"output-{DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss", CultureInfo.InvariantCulture)}.csv";
 
             Console.WriteLine("Starting Hubspot Mailinglist combiner.", Color.Green);
 
-            if (File.Exists("output.csv"))
+            if (File.Exists(outputFileName))
             {
-                Console.WriteLine("An output.csv file already exists, please rename, move or delete and try again.", Color.Red);
+                Console.WriteLine($"An {outputFileName} file already exists, please rename, move or delete and try again.", Color.Red);
                 Console.ReadLine();
                 return;
             }
@@ -69,8 +70,8 @@ namespace HubspotMailingListExportCombiner
             Console.WriteLine("Combining data", Color.Yellow);
             combineLists();
 
-            Console.WriteLine($"Generating output.csv file with {combinedList.Count} entries.", Color.Yellow);
-            using (var writer = new StreamWriter("output.csv"))
+            Console.WriteLine($"Generating {outputFileName} file with {combinedList.Count} entries.", Color.Yellow);
+            using (var writer = new StreamWriter(outputFileName))
             using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
             {
                 csv.WriteRecords(combinedList);
@@ -82,29 +83,48 @@ namespace HubspotMailingListExportCombiner
 
         static CombinedDataEntry BuildCombinedDataEntry(HubspotMailingListExportEntry entry)
         {
-            var domainParts = entry.Recipient.Split("@")[1].Split(".");
-            var urlParts = entry.ClickURL.ToLower().Replace("http://", "").Replace("https://", "").Split("/");
+            var eventCreatedDateParts = entry.EventCreatedDate.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
             var urlType =
-                urlParts.Count() < 2 ?
+                string.IsNullOrWhiteSpace(entry.ClickURL) ?
+                    "" :
+                    GetUrlType(entry.ClickURL);
+
+            return new CombinedDataEntry()
+            {
+                BounceMessage = entry.BounceMessage,
+                BounceReason = entry.BounceReason,
+                BounceStatus = entry.BounceStatus,
+                UrlType = urlType,
+                ClickURL = entry.ClickURL,
+                Company = GetCompanyName(entry.Recipient),
+                EventType = entry.EventType,
+                OpenDurationSeconds = CleanOpenDurationTime(entry.OpenDuration),
+                Recipient = entry.Recipient,
+                EventCreatedDate = eventCreatedDateParts.Length > 0 ? eventCreatedDateParts[0] : "",
+                EventCreatedTime = eventCreatedDateParts.Length > 1 ? eventCreatedDateParts[1] : ""
+            };
+        }
+
+        static string GetCompanyName(string recipient)
+        {
+            if (string.IsNullOrWhiteSpace(recipient) || !recipient.Contains("@"))
+            {
+                return "";
+            }
+
+            var domainParts = recipient.Split("@")[1].Split(".");
+            return domainParts.Length > 1 ? String.Join(".", domainParts.Take(domainParts.Length - 1)) : domainParts[0];
+        }
+
+        static string GetUrlType(string clickUrl)
+        {
+            var urlParts = clickUrl.ToLowerInvariant().Replace("http://", "").Replace("https://", "").Split("/");
+            return urlParts.Count() < 2 ?
                     "" :
                     urlParts[1].Contains("?") ?
                         "" :
                         urlParts[1];
-            return
-                new CombinedDataEntry()
-                {
-                    BounceMessage = entry.BounceMessage,
-                    BounceReason = entry.BounceReason,
-                    BounceStatus = entry.BounceStatus,
-                    UrlType = urlType,
-                    ClickURL = entry.ClickURL,
-                    Company = String.Join(".", domainParts.Take(domainParts.Length - 1)),
-                    EventType = entry.EventType,
-                    OpenDurationSeconds = CleanOpenDurationTime(entry.OpenDuration),
-                    Recipient = entry.Recipient,
-                    EventCreatedDate = entry.EventCreatedDate.Split(" ")[0],
-                    EventCreatedTime = entry.EventCreatedDate.Split(" ")[1]
-                };
         }
 
         static string CleanOpenDurationTime(string time)
@@ -115,15 +135,12 @@ namespace HubspotMailingListExportCombiner
             }
             else
             {
-                try
+                if (int.TryParse(time, out var timeInMS))
                 {
-                    var timeInMS = int.Parse(time);
                     return (timeInMS / 1000).ToString();
                 }
-                catch
-                {
-                    return "";
-                }
+
+                return "";
             }
         }
 
@@ -131,9 +148,8 @@ namespace HubspotMailingListExportCombiner
         {
             var config = new CsvConfiguration(CultureInfo.InvariantCulture)
             {
-                //MissingFieldFound = null, // ignore missing headers
-                //HeaderValidated = null, // ignore missing headers
-                CultureInfo = CultureInfo.InvariantCulture,
+                MissingFieldFound = null,
+                HeaderValidated = null,
             };
 
             using (var reader = new StreamReader(path))

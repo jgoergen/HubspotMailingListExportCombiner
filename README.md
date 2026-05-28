@@ -1,7 +1,7 @@
-# Hubspot Mailinglist Exort Combiner Utility
+# Hubspot Mailinglist Export Combiner Utility
 
 ## Use
-Export your mailing list results as advanced csv with all fields included, drag any number of related exports onto executeable to combine them into a single output.csv file.
+Export your mailing list results as advanced csv with all fields included, drag any number of related exports onto the executable to combine them into a single timestamped CSV file, such as `output-2026-05-28_14-30-00.csv`.
 
 ## What it does
 For every export dragged onto it, it takes all rows, omits any with events that are not UNSUBSCRIBE, BOUNCE, CLICK, OPEN, DELIVERED.
@@ -20,7 +20,9 @@ Once done, it combines the list in order builds a new export with the following 
 - "." = adding event.
 
 ## Requirements
-[.NET Core Runtime 3.1.3](https://dotnet.microsoft.com/download/dotnet-core/3.1)
+[.NET 10](https://dotnet.microsoft.com/download/dotnet/10.0) is required to build from source or run the framework-dependent build output.
+
+Use `dotnetcore31app\Build Single EXE Release.bat` to create a self-contained Windows x64 single-file executable.
 
 
 This project is licensed under the terms of the MIT license.

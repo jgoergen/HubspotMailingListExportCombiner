@@ -1,28 +1,12 @@
-# ignore excel files
+# HubSpot exports and generated spreadsheet output
 *.csv
 *.xls
 *.xlsx
 
-*.swp
-*.*~
-project.lock.json
-.DS_Store
-*.pyc
-nupkg/
-
-# Visual Studio Code
-.vscode
-
-# Rider
-.idea
-
-# User-specific files
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Build results
+# Build output
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -31,12 +15,49 @@ x64/
 x86/
 build/
 bld/
-[Bb]in/
-[Oo]bj/
-[Oo]ut/
 msbuild.log
 msbuild.err
 msbuild.wrn
 
-# Visual Studio 2015
+# Visual Studio
 .vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# Rider / JetBrains
+.idea/
+
+# NuGet
+*.nupkg
+*.snupkg
+nupkg/
+packages/
+project.assets.json
+project.nuget.cache
+project.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Test and coverage output
+TestResults/
+coverage/
+coverage.xml
+coverage.opencover.xml
+*.coverage
+*.coveragexml
+*.trx
+
+# OS/editor files
+*.swp
+*.*~
+.DS_Store
+Thumbs.db
+
+# Python cache from local utility scripts
+*.pyc
+__pycache__/
